@@ -1,9 +1,13 @@
+import time
 import serial
+
+PORT = "/dev/ttyACM2"
 
 
 def setup():
+    global PORT
     try:
-        ser = serial.Serial(port="/dev/ttyACM1", baudrate=9600)
+        ser = serial.Serial(port=PORT, baudrate=9600)
     except serial.serialutil.SerialException as e:
         print(e)
         ser = None
@@ -11,7 +15,7 @@ def setup():
 
         while ser == None:
             try:
-                ser = serial.Serial(port="/dev/ttyACM1", baudrate=9600)
+                ser = serial.Serial(port=PORT, baudrate=9600)
             except:
                 pass
     data = None
@@ -20,7 +24,8 @@ def setup():
     print("Ready!")
 
     serialWrite(ser, "component_status")
-    print(serialRead(ser))
+    while True:
+        print(serialRead(ser), end="\r")
 
 
 def serialWrite(ser, data: str | int):
