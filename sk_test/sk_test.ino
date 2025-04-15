@@ -5,6 +5,7 @@ const int echoPin = 3;
 
 int get_distance(){
   
+  // 0.0343 is sound vel in cm/microsecond
   
   digitalWrite(trigPin, LOW);  
 	delayMicroseconds(2);  

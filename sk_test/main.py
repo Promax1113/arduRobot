@@ -1,7 +1,11 @@
+import sys
+import PyQt5 as qt
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
 import time
 import serial
+import ui
 
-PORT = "/dev/ttyACM2"
+PORT = "/dev/ttyACM0"
 
 
 def setup():
@@ -23,9 +27,7 @@ def setup():
         data = int(ser.readline().decode("utf-8"))
     print("Ready!")
 
-    serialWrite(ser, "component_status")
-    while True:
-        print(serialRead(ser), end="\r")
+    return ser
 
 
 def serialWrite(ser, data: str | int):
@@ -39,4 +41,17 @@ def serialRead(ser):
     return data
 
 
-setup()
+def update_distance_label():
+    global ser
+    window.update_distance(int(serialRead(ser)))
+
+
+if __name__ == "__main__":
+    ser = setup()
+    app = QApplication(sys.argv)
+    window = ui.SimpleWindow()
+    window.show()
+    timer = qt.QtCore.QTimer()
+    timer.timeout.connect(update_distance_label)
+    timer.start(1000)
+    sys.exit(app.exec_())
