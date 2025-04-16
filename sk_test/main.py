@@ -1,11 +1,30 @@
+import json
 import sys
 import PyQt5 as qt
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
 import time
 import serial
-import ui
+
+import socket
+
+import signal
+import sys
+
 
 PORT = "/dev/ttyACM0"
+
+
+def socket_setup(port: int = 7777):
+    sk = socket.socket()
+    sk.bind(("0.0.0.0", port))
+    sock = None
+    sk.listen()
+
+    print(f"Now awaiting connections on {sk.getsockname()}!\n")
+    while not sock:
+        sock, _addr = sk.accept()
+        print(f"Connection incoming from {_addr}.")
+
+    return sock
 
 
 def setup():
@@ -41,17 +60,10 @@ def serialRead(ser):
     return data
 
 
-def update_distance_label():
-    global ser
-    window.update_distance(int(serialRead(ser)))
-
-
 if __name__ == "__main__":
     ser = setup()
-    app = QApplication(sys.argv)
-    window = ui.SimpleWindow()
-    window.show()
-    timer = qt.QtCore.QTimer()
-    timer.timeout.connect(update_distance_label)
-    timer.start(1000)
-    sys.exit(app.exec_())
+    sock = socket_setup()
+    while True:
+        data = ser.read_until()
+        print(data)
+        sock.sendall(json.dumps())
