@@ -28,12 +28,9 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available() > 0){
     Serial.println(get_distance());
-    delay(100);
+    delay(100);  // 100ms delay between readings
     digitalWrite(LED_BUILTIN, HIGH);
-
-      
-  }
-  digitalWrite(LED_BUILTIN, LOW);
+    delay(50);   // LED blink duration
+    digitalWrite(LED_BUILTIN, LOW);
 }

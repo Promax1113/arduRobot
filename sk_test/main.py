@@ -56,7 +56,7 @@ def serialWrite(ser, data: str | int):
 def serialRead(ser):
     data = None
     while not data:
-        data = ser.readline().decode("utf-8")
+        data = ser.readline().decode("utf-8").strip()
     return data
 
 
@@ -64,6 +64,7 @@ if __name__ == "__main__":
     ser = setup()
     sock = socket_setup()
     while True:
-        data = ser.read_until(size=2048)
+        data = serialRead(ser)
         print(data)
         sock.sendall(data)
+        time.sleep(0.5)
