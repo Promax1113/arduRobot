@@ -18,6 +18,8 @@ int get_distance(){
 void setup() {
   pinMode(trigPin, OUTPUT);  
 	pinMode(echoPin, INPUT);  
+  pinMode(LED_BUILTIN, OUTPUT);
+
 
   Serial.begin(9600);
   Serial.println(100);
@@ -29,8 +31,9 @@ void loop() {
   if (Serial.available() > 0){
     Serial.println(get_distance());
     delay(100);
+    digitalWrite(LED_BUILTIN, HIGH);
 
       
   }
-
+  digitalWrite(LED_BUILTIN, LOW);
 }

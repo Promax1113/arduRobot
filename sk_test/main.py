@@ -44,7 +44,7 @@ def setup():
     data = None
     while data != 100:
         data = int(ser.readline().decode("utf-8"))
-    print("Ready!")
+    print(f"Ready! Arduino connected via serial on {PORT}.")
 
     return ser
 
@@ -64,6 +64,6 @@ if __name__ == "__main__":
     ser = setup()
     sock = socket_setup()
     while True:
-        data = ser.read_until()
+        data = ser.read_until(size=2048)
         print(data)
-        sock.sendall(json.dumps())
+        sock.sendall(data)
