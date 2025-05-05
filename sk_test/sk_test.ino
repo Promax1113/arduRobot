@@ -1,7 +1,7 @@
 float duration, distance;
 
-const int trigPin = 2;
-const int echoPin = 3;
+const int trigPin = 29;
+const int echoPin = 28;
 
 int get_distance(){
   
@@ -30,7 +30,7 @@ void setup() {
 void loop() {
     Serial.println(get_distance());
     delay(100);  // 100ms delay between readings
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(38, HIGH);
     delay(50);   // LED blink duration
-    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(38, LOW);
 }

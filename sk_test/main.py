@@ -1,6 +1,5 @@
 import json
 import random
-import sys
 import time
 import serial
 
@@ -68,15 +67,19 @@ def serial_read(ser):
         data = ser.readline().decode("utf-8").strip()
     return data
 
+
 def send_data(sk, data, encode=True):
     data = json.dumps(data)
     if encode:
         data = data.encode()
+    header = struct.pack("!I", len(data))
+    sk.sendall(header)
     sk.sendall(data)
-    
+
 
 def debug_serial_read():
     return random.randint(0, 30)
+
 
 if __name__ == "__main__":
     # ser = setup()
