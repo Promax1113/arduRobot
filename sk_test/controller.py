@@ -31,7 +31,7 @@ def receive(sk, decode=True):
 
     while len(data) < message_size:
         received = sk.recv(min(message_size - len(data), 1024))
-        while not decoded:
+        while not received:
             received = sk.recv(min(message_size - len(data), 1024))
         data += received
 
@@ -39,7 +39,7 @@ def receive(sk, decode=True):
         decoded: dict = json.loads(data.decode())
         if decoded["header"] == "sensor":
             ## display
-            print(decoded)
+            print(decoded, end="\r")
         elif decoded["header"] == "terminate":
             exit()
         else:
@@ -54,7 +54,7 @@ def read_data(sk):
 
 
 if __name__ == "__main__":
-    sock: socket.socket = setup("192.168.1.55", 7777)
+    sock: socket.socket = setup("192.168.1.45", 7777)
     while True:
         receive(sock)
         time.sleep(0.2)

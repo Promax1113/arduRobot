@@ -15,7 +15,7 @@ PORT = "/dev/ttyACM0"
 
 def socket_setup(port: int = 7777):
     sk = socket.socket()
-    sk.bind(("127.0.0.1", port))
+    sk.bind(("0.0.0.0", port))
     sock = None
     sk.listen()
 
@@ -62,6 +62,8 @@ def serial_write(ser, data: str | int):
 
 
 def serial_read(ser):
+    # Reset it so it gets the latest value, and not the ones waiting to be read.
+    ser.reset_input_buffer()
     data = None
     while not data:
         data = ser.readline().decode("utf-8").strip()
@@ -82,11 +84,16 @@ def debug_serial_read():
 
 
 if __name__ == "__main__":
-    # ser = setup()
+    ser = setup()
     sock = socket_setup()
+    start_time = time.time()
     while True:
-        # data = serialRead(ser)
-        data = debug_serial_read()
-        print(data)
-        send_data(sock, {"header": "sensor", "distance": data})
+        data = serial_read(ser)
+        # data = debug_serial_read()
+        print(f"{int(time.time() - start_time)}: {data}", end="\r")
+        try:
+            send_data(sock, {"header": "sensor", "distance": data})
+        except ConnectionResetError:
+            print("connection was reset")
+            sock = socket_setup()
         time.sleep(0.1)
