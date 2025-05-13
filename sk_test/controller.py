@@ -31,7 +31,7 @@ def receive(sk, decode=True):
 
     while len(data) < message_size:
         received = sk.recv(min(message_size - len(data), 1024))
-        while not decoded:
+        while not received:
             received = sk.recv(min(message_size - len(data), 1024))
         data += received
 

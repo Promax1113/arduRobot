@@ -1,7 +1,16 @@
+#include <DHT.h>
+#include <ArduinoJson.h>
+
 float duration, distance;
 
 const int trigPin = 29;
 const int echoPin = 28;
+
+const int DHTPin = 2;
+
+DHT dht(DHTPin, DHT22);
+
+StaticJsonDocument<200> doc;
 
 int get_distance(){
   
@@ -15,6 +24,7 @@ int get_distance(){
   return (pulseIn(echoPin, HIGH) * .0343) / 2;    // divided by 2 to take into account just going or coming back, not whole time.
 }
 
+
 void setup() {
   pinMode(trigPin, OUTPUT);  
 	pinMode(echoPin, INPUT);  
@@ -24,13 +34,18 @@ void setup() {
   Serial.begin(9600);
   Serial.println(100);
 
+  dht.begin();
 
 }
 
 void loop() {
-    Serial.println(get_distance());
-    delay(100);  // 100ms delay between readings
-    digitalWrite(38, HIGH);
-    delay(50);   // LED blink duration
-    digitalWrite(38, LOW);
+    doc.clear();
+    doc["distance"] = get_distance();
+    doc["timestamp"] = millis();
+    doc["temperature"] = dht.readTemperature();
+    doc["humidity"] = dht.readHumidity();
+    serializeJson(doc, Serial);
+    Serial.println();
+    if (Serial.available()){
+    }
 }

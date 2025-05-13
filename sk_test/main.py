@@ -14,7 +14,7 @@ PORT = "/dev/ttyACM0"
 
 
 def socket_setup(port: int = 7777):
-    sk = socket.socket()
+    sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sk.bind(("127.0.0.1", port))
     sock = None
     sk.listen()
@@ -23,10 +23,10 @@ def socket_setup(port: int = 7777):
     while not sock:
         sock, _addr = sk.accept()
         print(f"Connection incoming from {_addr}.")
-        sock.send(struct.pack("!I", 100))
-        data = sock.recv(BUFSIZE)
+        sock.sendto(struct.pack("!I", 100), _addr)
+        data, addr = sock.recvfrom(BUFSIZE)
         while not data:
-            data = sock.recv(BUFSIZE)
+            data, addr = sock.recvfrom(BUFSIZE)
         if struct.unpack("!I", data)[0] == 100:
             print("Connection test successful!")
         else:
@@ -62,10 +62,12 @@ def serial_write(ser, data: str | int):
 
 
 def serial_read(ser):
+
+    ser.reset_input_buffer()
     data = None
     while not data:
         data = ser.readline().decode("utf-8").strip()
-    return data
+    return json.loads(data)
 
 
 def send_data(sk, data, encode=True):
@@ -88,5 +90,5 @@ if __name__ == "__main__":
         # data = serialRead(ser)
         data = debug_serial_read()
         print(data)
-        send_data(sock, {"header": "sensor", "distance": data})
+        send_data(sock, {"header": "sensor", "distance": data["distance"]})
         time.sleep(0.1)
