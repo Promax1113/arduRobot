@@ -51,7 +51,10 @@ def setup():
                 pass
     data = None
     while data != 100:
-        data = int(ser.readline().decode("utf-8"))
+        data = ser.readline()
+        print(data)
+        data = int(data.decode())
+    ser.write(bytes([100]))
     print(f"Ready! Arduino connected via serial on {PORT}.")
 
     return ser
@@ -67,6 +70,7 @@ def serial_read(ser):
     data = None
     while not data:
         data = ser.readline().decode("utf-8").strip()
+    print(data)
     return json.loads(data)
 
 
@@ -92,7 +96,7 @@ if __name__ == "__main__":
         # data = debug_serial_read()
         print(f"{int(time.time() - start_time)}: {data}", end="\r")
         try:
-            send_data(sock, {"header": "sensor", "distance": data})
+            send_data(sock, data)
         except ConnectionResetError:
             print("connection was reset")
             sock = socket_setup()

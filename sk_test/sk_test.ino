@@ -1,10 +1,10 @@
-#include <DHT.h>
 #include <ArduinoJson.h>
+#include <DHT.h>
 
-float duration, distance;
 
-const int trigPin = 29;
-const int echoPin = 28;
+const int trigPin = 22;
+const int echoPin = 23;
+const int statusLED = 3;
 
 const int DHTPin = 2;
 
@@ -12,40 +12,42 @@ DHT dht(DHTPin, DHT22);
 
 StaticJsonDocument<200> doc;
 
-int get_distance(){
-  
-  // 0.0343 is sound vel in cm/microsecond
-  
-  digitalWrite(trigPin, LOW);  
-	delayMicroseconds(2);  
-	digitalWrite(trigPin, HIGH);  
-	delayMicroseconds(10);  
-	digitalWrite(trigPin, LOW);
-  return (pulseIn(echoPin, HIGH) * .0343) / 2;    // divided by 2 to take into account just going or coming back, not whole time.
+float getDistance(){
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  return (pulseIn(echoPin, HIGH) * 0.0343) / 2;    // divided by 2 to take into account just going or coming back, not whole time.
 }
+
+
 
 
 void setup() {
-  pinMode(trigPin, OUTPUT);  
-	pinMode(echoPin, INPUT);  
-  pinMode(LED_BUILTIN, OUTPUT);
-
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(statusLED, OUTPUT);
 
   Serial.begin(9600);
-  Serial.println(100);
+  
+  Serial.println(1);
 
-  dht.begin();
+  while (true) {
+    digitalWrite(statusLED, HIGH);
 
+    if (Serial.available() > 0) {
+      int incoming = Serial.read();
+      if (incoming == 1) {
+        digitalWrite(statusLED, LOW);
+        break;
+      }
+    }
+    delay(100);
+  }
 }
 
-void loop() {
-    doc.clear();
-    doc["distance"] = get_distance();
-    doc["timestamp"] = millis();
-    doc["temperature"] = dht.readTemperature();
-    doc["humidity"] = dht.readHumidity();
-    serializeJson(doc, Serial);
-    Serial.println();
-    if (Serial.available()){
-    }
+void loop(){
+  
 }
