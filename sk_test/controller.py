@@ -12,11 +12,11 @@ def setup(addr: str, port: int):
     data = sk.recv(BUFSIZE)
     while not data:
         data = sk.recv(BUFSIZE)
-    if struct.unpack("!I", data)[0] == 100:
+    if struct.unpack("!I", data)[0] == 1:
         print("Connection successfully tested.")
     else:
         print("Failed to communicate with the robot.")
-    sk.send(struct.pack("!I", 100))
+    sk.send(struct.pack("!I", 1))
 
     return sk
 
@@ -54,7 +54,7 @@ def read_data(sk):
 
 
 if __name__ == "__main__":
-    sock: socket.socket = setup("192.168.1.45", 7777)
+    sock: socket.socket = setup("127.0.0.1", 7777)
     while True:
         receive(sock)
-        time.sleep(0.2)
+        time.sleep(0.1)

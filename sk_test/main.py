@@ -6,7 +6,7 @@ import serial
 import socket
 
 import struct
-import sys
+import threading
 
 
 BUFSIZE = 1024
@@ -23,11 +23,11 @@ def socket_setup(port: int = 7777):
     while not sock:
         sock, _addr = sk.accept()
         print(f"Connection incoming from {_addr}.")
-        sock.sendto(struct.pack("!I", 100), _addr)
+        sock.sendto(struct.pack("!I", 1), _addr)
         data, addr = sock.recvfrom(BUFSIZE)
         while not data:
             data, addr = sock.recvfrom(BUFSIZE)
-        if struct.unpack("!I", data)[0] == 100:
+        if struct.unpack("!I", data)[0] == 1:
             print("Connection test successful!")
         else:
             print("Wasn't able to verify the connection is working.")
@@ -39,7 +39,7 @@ def setup():
     global PORT
     try:
         ser = serial.Serial(port=PORT, baudrate=9600)
-    except serial.serialutil.SerialException as e:
+    except serial.SerialException as e:
         print(e)
         ser = None
         print("Awaiting serial...")
@@ -50,18 +50,26 @@ def setup():
             except:
                 pass
     data = None
-    while data != 100:
+    while data != 1:
         data = ser.readline()
         print(data)
         data = int(data.decode())
-    ser.write(bytes([100]))
+    ser.write(bytes([1]))
     print(f"Ready! Arduino connected via serial on {PORT}.")
 
     return ser
 
 
-def serial_write(ser, data: str | int):
-    ser.write(data.encode("utf-8") if type(data) == str else data)
+def serial_write(ser: serial.Serial, data: dict[str, int]| str | int):
+    if type(data) == str:
+        ser.write(data.encode())
+    elif type(data) == dict:
+        ser.write((json.dumps(data) + "\n").encode())
+    elif type(data) == int:
+        ser.write(bytes([data]))
+    else:
+        raise TypeError("Unsupported data type for serial_write")
+
 
 
 def serial_read(ser):
@@ -86,8 +94,13 @@ def send_data(sk, data, encode=True):
 def debug_serial_read():
     return random.randint(0, 30)
 
+def camera_server():
+    
 
 if __name__ == "__main__":
+    camera_server = threading.Thread(target=camera_server)
+    camera_server.start()
+    
     ser = setup()
     sock = socket_setup()
     start_time = time.time()
@@ -100,4 +113,8 @@ if __name__ == "__main__":
         except ConnectionResetError:
             print("connection was reset")
             sock = socket_setup()
-        time.sleep(0.1)
+        data = {"motor1": random.randint(0, 1), "motor2": random.randint(0, 1)}
+        print(data)
+        serial_write(ser, data)
+
+        time.sleep(0.3)
