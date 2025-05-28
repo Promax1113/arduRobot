@@ -3,9 +3,21 @@ from mjpeg_streamer import MjpegServer, Stream
 
 def setup_camera():
 
-    stop_file = "./stopfile"
 
     capture = cv2.VideoCapture(0)
+
+    capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+
+    # Optionally set resolution and FPS explicitly
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    capture.set(cv2.CAP_PROP_FPS, 30)
+
+    # Optionally set resolution and FPS explicitly
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    capture.set(cv2.CAP_PROP_FPS, 30)
+
 
     server = MjpegServer("0.0.0.0", 8080)
     stream = Stream(name="onboard-camera", size=(1280, 720), quality=70, fps=30)
