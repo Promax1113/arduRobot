@@ -77,11 +77,16 @@ def serial_write(ser: serial.Serial, data: dict[str, int]| str | int):
 def serial_read(ser):
     # Reset it so it gets the latest value, and not the ones waiting to be read.
     ser.reset_input_buffer()
-    data = None
-    while not data:
-        data = ser.readline().decode("utf-8").strip()
-    print(data)
-    return json.loads(data)
+
+    lenght_bytes = ser.read(2)
+    lenght = (lenght_bytes[0] << 8) | lenght_bytes[1]
+    return json.loads(ser.read(lenght).decode())
+
+    # data = None
+    # while not data:
+    #     data = ser.readline().decode("utf-8").strip()
+    # print(data)
+    # return json.loads(data)
 
 
 def send_data(sk, data, encode=True):

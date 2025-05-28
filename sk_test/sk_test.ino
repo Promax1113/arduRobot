@@ -87,9 +87,11 @@ void loop(){
   doc["distance"] = getDistance();
   doc["temperature"] = dht.readTemperature();
   doc["humidity"] = dht.readHumidity();
-
-  serializeJson(doc, Serial);
-  Serial.println();
+  char buffer[200];
+  size_t len = serializeJson(doc, Serial);
+  Serial.write((len >> 8) & 0xFF);
+  Serial.write(len & 0xFF);
+  Serial.write((uint8_t*)buffer, len);
 
   if (Serial.available() > 0){
     StaticJsonDocument<200> hostData;
