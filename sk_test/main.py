@@ -8,6 +8,7 @@ import socket
 import struct
 import threading
 
+import camera
 
 BUFSIZE = 1024
 PORT = "/dev/ttyACM0"
@@ -49,6 +50,7 @@ def setup():
                 ser = serial.Serial(port=PORT, baudrate=9600)
             except:
                 pass
+    ser.reset_input_buffer()
     data = None
     while data != 1:
         data = ser.readline()
@@ -94,11 +96,10 @@ def send_data(sk, data, encode=True):
 def debug_serial_read():
     return random.randint(0, 30)
 
-def camera_server():
     
 
 if __name__ == "__main__":
-    camera_server = threading.Thread(target=camera_server)
+    camera_server = threading.Thread(target=camera.setup_camera)
     camera_server.start()
     
     ser = setup()

@@ -6,8 +6,9 @@ const int trigPin = 22;
 const int echoPin = 23;
 const int statusLED = 3;
 
-const int testPin1 = 36;
-const int testPin2 = 37;
+const int motor1Pin = 36;
+const int motor2Pin = 37;
+const int enableRightMotors = 38;
 
 const int DHTPin = 2;
 
@@ -33,8 +34,10 @@ void setup() {
   pinMode(echoPin, INPUT);
   pinMode(statusLED, OUTPUT);
 
-  pinMode(testPin1, OUTPUT);
-  pinMode(testPin2, OUTPUT);
+  pinMode(motor1Pin, OUTPUT);
+  pinMode(motor2Pin, OUTPUT);
+  pinMode(enableRightMotors, OUTPUT);
+  digitalWrite(enableRightMotors, HIGH);
 
   Serial.begin(9600);
   
@@ -95,8 +98,8 @@ void loop(){
     if (err){
       return;
     }
-    digitalWrite(testPin1, int(hostData["motor1"]));
-    digitalWrite(testPin1, int(hostData["motor2"]));
+    digitalWrite(motor1Pin, int(hostData["motor1"]));
+    digitalWrite(motor1Pin, int(hostData["motor2"]));
 
   }
   delay(500);
