@@ -54,7 +54,7 @@ def read_data(sk):
 
 
 if __name__ == "__main__":
-    sock: socket.socket = setup("192.168.1.43", 7777)
+    sock: socket.socket = setup("127.0.0.1", 7777)
     while True:
         receive(sock)
         time.sleep(0.1)

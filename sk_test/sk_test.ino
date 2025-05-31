@@ -8,7 +8,7 @@ const int statusLED = 3;
 
 const int motor1Pin = 36;
 const int motor2Pin = 37;
-const int enableRightMotors = 38;
+const int enableRightMotors = 7;
 
 const int DHTPin = 2;
 
@@ -60,7 +60,6 @@ void setup() {
       humidity = dht.readHumidity();
     }
   }
-
   while (true) {
     digitalWrite(statusLED, HIGH);
 
@@ -73,6 +72,8 @@ void setup() {
     }
     delay(100);
   }
+
+  delay(1000);
   
 }
 
@@ -81,25 +82,34 @@ void loop(){
   float temperature;
   float humidity;
   float distance;
-
+  if (((distance = (int)getDistance()) > 500)){
+    distance = (int)getDistance();
+  }
   doc.clear();
   doc["timestamp"] = millis();
-  doc["distance"] = getDistance();
-  doc["temperature"] = dht.readTemperature();
-  doc["humidity"] = dht.readHumidity();
-  char buffer[200];
-  size_t len = serializeJson(doc, Serial);
-  Serial.write((len >> 8) & 0xFF);
-  Serial.write(len & 0xFF);
-  Serial.write((uint8_t*)buffer, len);
+  doc["distance"] = distance; 
+  doc["temperature"] = (int)dht.readTemperature();
+  doc["humidity"] = (int)dht.readHumidity();
+  String jsonString;
+  serializeJson(doc, jsonString);
 
+  unsigned int length = jsonString.length();
+  
+  Serial.println(length);
+  Serial.println();
+  Serial.print(jsonString);
+  Serial.println();
+
+  
+
+  
   if (Serial.available() > 0){
     StaticJsonDocument<200> hostData;
     DeserializationError err = deserializeJson(hostData, Serial);
-
     if (err){
       return;
     }
+
     digitalWrite(motor1Pin, int(hostData["motor1"]));
     digitalWrite(motor1Pin, int(hostData["motor2"]));
 
