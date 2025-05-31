@@ -82,23 +82,32 @@ void loop(){
   float temperature;
   float humidity;
   float distance;
-  if (((distance = (int)getDistance()) > 500)){
-    distance = (int)getDistance();
+  int data;
+
+  if (((distance = getDistance()) > 500)){
+    distance = getDistance();
   }
   doc.clear();
   doc["timestamp"] = millis();
   doc["distance"] = distance; 
   doc["temperature"] = (int)dht.readTemperature();
   doc["humidity"] = (int)dht.readHumidity();
-  String jsonString;
-  serializeJson(doc, jsonString);
+  char jsonString[200];
+  unsigned int length = serializeJson(doc, jsonString);
 
-  unsigned int length = jsonString.length();
-  
   Serial.println(length);
-  Serial.println();
-  Serial.print(jsonString);
-  Serial.println();
+  while ((data = Serial.read()) != length)
+  {
+    // Waiting for the correct data length
+  
+    if (Serial.available() > 0) {
+      data = Serial.read();
+      if (data == length) {
+        break;
+      }
+    }
+  }
+  Serial.println(jsonString);
 
   
 
