@@ -80,7 +80,7 @@ def serial_read(ser: serial.Serial):
     print("Trying to read...")
     # Read 4 bytes for the header
     length = ser.readline()
-    ser.write(bytes([int(length)]))
+    ser.write(length)
     
     json_data = ser.read(int(length.decode()))
     
