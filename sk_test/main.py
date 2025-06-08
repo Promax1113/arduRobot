@@ -77,13 +77,8 @@ def serial_write(ser: serial.Serial, data: dict[str, int]| str | int):
 def serial_read(ser: serial.Serial):
     # Reset it so it gets the latest value, and not the ones waiting to be read.
     ser.reset_input_buffer()
-    print("Trying to read...")
-    # Read 4 bytes for the header
-    length = ser.readline()
-    ser.write(length)
     
-    json_data = ser.read(int(length.decode()))
-    
+    json_data = ser.readline()
     return json.loads(json_data.decode())
     # data = None
     # while not data:
@@ -112,20 +107,19 @@ if __name__ == "__main__":
     #camera_server.start()
     
     ser = setup()
-    sock = socket_setup()
+    sensor_data = socket_setup()
     start_time = time.time()
     while True:
         data = serial_read(ser)
         # data = debug_serial_read()
-        print(f"{int(time.time() - start_time)}: {data}", end="\r")
+        print(f"{int(time.time() - start_time)}: {data}")
         try:
-            send_data(sock, data)
+            send_data(sensor_data, data)
         except ConnectionResetError:
             print("connection was reset")
-            sock = socket_setup()
-        x = random.randint(0, 1)
-        data = {"motor1": -x, "motor2": x}
-        print(data)
+            sensor_data = socket_setup()
+        
+        data = {"motor1": 1, "motor2": 0}
         serial_write(ser, data)
 
         time.sleep(0.3)

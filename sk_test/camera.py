@@ -38,3 +38,6 @@ def setup_camera():
     finally:
         server.stop()
         capture.release()
+
+if __name__ == "__main__":
+    setup_camera()

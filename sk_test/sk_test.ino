@@ -6,8 +6,8 @@ const int trigPin = 22;
 const int echoPin = 23;
 const int statusLED = 3;
 
-const int motor1Pin = 36;
-const int motor2Pin = 37;
+const int motor1Pin = 24;
+const int motor2Pin = 25;
 const int enableRightMotors = 7;
 
 const int DHTPin = 2;
@@ -90,23 +90,12 @@ void loop(){
   doc.clear();
   doc["timestamp"] = millis();
   doc["distance"] = distance; 
-  doc["temperature"] = (int)dht.readTemperature();
-  doc["humidity"] = (int)dht.readHumidity();
+  doc["temperature"] = dht.readTemperature();
+  doc["humidity"] = dht.readHumidity();
   char jsonString[200];
   unsigned int length = serializeJson(doc, jsonString);
 
-  Serial.println(length);
-  while ((data = Serial.read()) != length)
-  {
-    // Waiting for the correct data length
-  
-    if (Serial.available() > 0) {
-      data = Serial.read();
-      if (data == length) {
-        break;
-      }
-    }
-  }
+
   Serial.println(jsonString);
 
   
@@ -119,8 +108,8 @@ void loop(){
       return;
     }
 
-    digitalWrite(motor1Pin, int(hostData["motor1"]));
-    digitalWrite(motor1Pin, int(hostData["motor2"]));
+    digitalWrite(motor1Pin, HIGH);
+    digitalWrite(motor2Pin, LOW);
 
   }
   delay(500);
