@@ -2,7 +2,8 @@ import sys
 import cv2 as cv
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QLabel, QGridLayout, QWidget, QApplication, QMainWindow, QSizePolicy
+from PyQt5.QtWidgets import QLabel, QGridLayout, QMessageBox, QTableWidget, QTableWidgetItem, QWidget, QApplication, QMainWindow, QSizePolicy
+from controller import setup, receive
 
 class Thread(QThread):
     def __init__(self) -> None:
@@ -21,12 +22,14 @@ class CameraThread(Thread):
         self.source = url
     
     def run(self) -> None:
-        self.capture = cv.VideoCapture(self.source)
-       
-           
+        self.capture = cv.VideoCapture(self.source)   
         while self._run_flag:
             ret, frame = self.capture.read()
             if not ret: 
+                frame = cv.imread("./nocamera.png")
+                rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+                height, width, channel_count = rgb_frame.shape
+                self.frame_ready_signal.emit(QImage(rgb_frame.data, width, height, width * channel_count, QImage.Format_RGB888))
                 self.msleep(10)
             else:    
                 rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -40,18 +43,36 @@ class CameraThread(Thread):
     def stop(self) -> None:
         super().stop()
         self.capture.release()
+
+class SocketThread(Thread):
+    data_ready_signal = pyqtSignal(dict)
+    def __init__(self, address: str, port: int):
+        super().__init__()
+        self.connection = (address, port)
+        self.socket = setup(address, port)
+            
+    def run(self):
+        while self._run_flag:
+            data = receive(self.socket)
+            print("emitting")
+            self.data_ready_signal.emit(data)
+    def stop(self):
+        self.socket.close()
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
 
         super().__init__()
         self.setWindowTitle("Robot Interface")
         self.resize(800, 400)
-        self.configure_layout()
-        
-
+        self.configure_layout() 
         self.camera_thread = CameraThread("http://127.0.0.1:8080/onboard-camera")
         self.camera_thread.frame_ready_signal.connect(self.update_image)
         self.camera_thread.start()
+        
+        self.sensor_data_thread = SocketThread("127.0.0.1", 7777)
+        self.sensor_data_thread.data_ready_signal.connect(self.update_sensor_data)
+        self.sensor_data_thread.start()
+
 
     def update_image(self, image):
         pixmap = QPixmap.fromImage(image)
@@ -62,18 +83,45 @@ class MainWindow(QMainWindow):
         )
         self.image_label.setPixmap(scaled_pixmap)
     
+    def dialog_box(self, title, description, icon):
+        box = QMessageBox()
+        box.setIcon(QMessageBox.Critical)         # Options: Information, Warning, Critical, Question
+
+        box.setWindowTitle(title)
+        box.setText(description)
+        box.setDefaultButton(QMessageBox.Exit)
+
+        result = box.exec_()
+
+        if result == QMessageBox.Exit:
+            exit(-1)
+
+    def update_sensor_data(self, data: dict):
+        print(data)
+        if "invalid" in data.keys():
+            return self.dialog_box("Socket Refused Connection", "The sensor data socket on the robot refused connection. Check that you are in the same network as the robot and that you have the respective ports open.", "icon")
+        self.data_table.setColumnCount(2)
+        self.data_table.setRowCount(len(data.keys()))
+        i = 0
+        for key, value in data.items():
+            
+            self.data_table.setItem(i, 0, QTableWidgetItem(key))
+            self.data_table.setItem(i, 1, QTableWidgetItem(str(value)))
+            i += 1
     def configure_layout(self):
         container = QWidget()
         self.setCentralWidget(container)
 
-        layout = QGridLayout()
-        container.setLayout(layout)
+        self.windowLayout = QGridLayout()
+        container.setLayout(self.windowLayout)
         self.image_label = QLabel(self)
         self.image_label.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
         )
+        self.data_table = QTableWidget()
+        self.windowLayout.addWidget(self.data_table, 0, 3)
         self.image_label.setMinimumSize(1, 1)  # Allow shrinking to very small
-        layout.addWidget(self.image_label)
+        self.windowLayout.addWidget(self.image_label, 0, 0, 2, 1)
         
     def closeEvent(self, a0):
         self.camera_thread.stop()

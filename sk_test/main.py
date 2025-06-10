@@ -98,20 +98,20 @@ def send_data(sk, data, encode=True):
 
 
 def debug_serial_read():
-    return random.randint(0, 30)
+    return {"timestamp": time.time(), "testdata": random.randint(0, 100)}
 
     
 
 if __name__ == "__main__":
     camera_server = threading.Thread(target=camera.setup_camera)
-    #camera_server.start()
+    camera_server.start()
     
     ser = setup()
     sensor_data = socket_setup()
     start_time = time.time()
     while True:
         data = serial_read(ser)
-        # data = debug_serial_read()
+        #data = debug_serial_read()
         print(f"{int(time.time() - start_time)}: {data}")
         try:
             send_data(sensor_data, data)
@@ -120,6 +120,6 @@ if __name__ == "__main__":
             sensor_data = socket_setup()
         
         data = {"motor1": 1, "motor2": 0}
-        serial_write(ser, data)
+        #serial_write(ser, data)
 
-        time.sleep(0.3)
+        time.sleep(0.2)

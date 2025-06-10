@@ -112,5 +112,5 @@ void loop(){
     digitalWrite(motor2Pin, LOW);
 
   }
-  delay(500);
+  delay(300);
 }

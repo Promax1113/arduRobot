@@ -5,6 +5,7 @@ def setup_camera():
 
 
     capture = cv2.VideoCapture(0)
+    
 
     capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
 
@@ -19,7 +20,7 @@ def setup_camera():
     capture.set(cv2.CAP_PROP_FPS, 30)
 
 
-    server = MjpegServer("0.0.0.0", 8080)
+    server = MjpegServer("127.0.0.1", 8080)
     stream = Stream(name="onboard-camera", size=(1280, 720), quality=70, fps=30)
 
     server.add_stream(stream)
