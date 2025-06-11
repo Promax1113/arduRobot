@@ -13,6 +13,30 @@ import camera
 BUFSIZE = 1024
 PORT = "/dev/ttyACM0"
 
+class Socket(socket.socket):
+    def __init__(self) -> None:
+         super().__init__(socket.AF_INET, socket.SOCK_STREAM)
+        
+    def receive(self):
+        start_time = time.time()
+        data = None
+        while not data or time.time() - start_time < 500:
+            data = self.recv(1024)
+        return data
+
+class MovementSocket(socket.socket):
+    def __init__(self) -> None:
+        super().__init__(socket.AF_INET, socket.SOCK_STREAM)
+
+    def receive(self):
+        header = None
+        while not header:
+            header = self.recv(4)
+        
+
+
+
+
 
 def socket_setup(port: int = 7777):
     sk = socket.socket()
@@ -100,14 +124,16 @@ def send_data(sk, data, encode=True):
 def debug_serial_read():
     return {"timestamp": time.time(), "testdata": random.randint(0, 100)}
 
-    
 
 if __name__ == "__main__":
     camera_server = threading.Thread(target=camera.setup_camera)
     camera_server.start()
     
     ser = setup()
-    sensor_data = socket_setup()
+    sensor_data = socket_setup(port=7777)
+    interrupt_socket = socket_setup(port=7778)
+    motor_socket = socket_setup(port=7779)
+
     start_time = time.time()
     while True:
         data = serial_read(ser)

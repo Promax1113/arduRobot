@@ -50,6 +50,8 @@ def read_data(sk):
 
 if __name__ == "__main__":
     sock: socket.socket = setup("127.0.0.1", 7777)
+    motor = setup("127.0.0.1", 7778)
     while True:
         print(receive(sock))
+        motor.sendall("test")
         time.sleep(0.1)

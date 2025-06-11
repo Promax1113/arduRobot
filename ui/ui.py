@@ -65,11 +65,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Robot Interface")
         self.resize(800, 400)
         self.configure_layout() 
-        self.camera_thread = CameraThread("http://127.0.0.1:8080/onboard-camera")
+        self.camera_thread = CameraThread("http://192.168.1.42:8080/onboard-camera")
         self.camera_thread.frame_ready_signal.connect(self.update_image)
         self.camera_thread.start()
         
-        self.sensor_data_thread = SocketThread("127.0.0.1", 7777)
+        self.sensor_data_thread = SocketThread("192.168.1.42", 7777)
         self.sensor_data_thread.data_ready_signal.connect(self.update_sensor_data)
         self.sensor_data_thread.start()
 
