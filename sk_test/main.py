@@ -25,18 +25,41 @@ class Socket(socket.socket):
         return data
 
 class MovementSocket(socket.socket):
-    def __init__(self) -> None:
+    def __init__(self, port) -> None:
         super().__init__(socket.AF_INET, socket.SOCK_STREAM)
+        
+        self.bind(("0.0.0.0", port))
+        self.sender = None
+        self.listen()
+
+        print(f"Now awaiting connections on {self.getsockname()}!\n")
+        while not self.sender:
+            self.sender, _addr = self.accept()
+            print(f"Connection incoming from {_addr}.")
+            self.sender.sendto(struct.pack("!I", 1), _addr)
+            data, addr = self.sender.recvfrom(BUFSIZE)
+            while not data:
+                data, addr = self.sender.recvfrom(BUFSIZE)
+                if struct.unpack("!I", data)[0] == 1:
+                    print("Connection test successful!")
+                else:
+                    print("Wasn't able to verify the connection is working.")
+
 
     def receive(self):
         header = None
         while not header:
-            header = self.recv(4)
+            header = self.sender.recv(4)
+
+        data_size = struct.unpack("!I", header)[0]
+        data = b"" 
         
-
-
-
-
+        while len(data) < data_size:
+            received = self.sender.recv(min(data_size - len(data), 1024))
+            while not received:
+                received = self.sender.recv(min(data_size - len(data), 1024))
+            data += received
+        return json.loads(data.decode())
 
 def socket_setup(port: int = 7777):
     sk = socket.socket()
@@ -99,9 +122,7 @@ def serial_write(ser: serial.Serial, data: dict[str, int]| str | int):
 
 
 def serial_read(ser: serial.Serial):
-    # Reset it so it gets the latest value, and not the ones waiting to be read.
-    ser.reset_input_buffer()
-    
+    # Reset it so it gets the latest value, and not the ones waiting to be read.   
     json_data = ser.readline()
     return json.loads(json_data.decode())
     # data = None
@@ -131,8 +152,9 @@ if __name__ == "__main__":
     
     ser = setup()
     sensor_data = socket_setup(port=7777)
+    time.sleep(0.5)
     interrupt_socket = socket_setup(port=7778)
-    motor_socket = socket_setup(port=7779)
+    motor_socket = MovementSocket(port=7779)
 
     start_time = time.time()
     while True:
@@ -144,7 +166,7 @@ if __name__ == "__main__":
         except ConnectionResetError:
             print("connection was reset")
             sensor_data = socket_setup()
-        
+        print(motor_socket.receive())
         data = {"motor1": 1, "motor2": 0}
         #serial_write(ser, data)
 

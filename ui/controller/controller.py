@@ -8,10 +8,14 @@ BUFSIZE = 38
 
 def setup(addr: str, port: int):
     sk: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sk.connect((addr, port))
-    except ConnectionRefusedError:
-        return -1
+    tries = 0
+    while tries < 5:    
+        try:
+            sk.connect((addr, port))
+            break
+        except ConnectionRefusedError:
+            tries += 1
+        
     data = sk.recv(BUFSIZE)
     while not data:
         data = sk.recv(BUFSIZE)
@@ -50,8 +54,18 @@ def read_data(sk):
 
 if __name__ == "__main__":
     sock: socket.socket = setup("127.0.0.1", 7777)
-    motor = setup("127.0.0.1", 7778)
+    print("connected to 7777")
+    time.sleep(0.5)
+    interrupt = setup("127.0.0.1", 7778)
+    print("connected to 7778")
+    time.sleep(0.5)
+    motor = setup("127.0.0.1", 7779)
+    print("connected to 7779")
     while True:
         print(receive(sock))
-        motor.sendall("test")
+        print("recv")
+        motor.sendall(struct.pack("!I", len(json.dumps({"test": True}).encode())))
+        time.sleep(0.1)
+        motor.sendall(json.dumps({"test": True}).encode())
+        print("sent")
         time.sleep(0.1)
