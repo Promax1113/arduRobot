@@ -48,8 +48,12 @@ def receive(sk, decode=True):
     return decoded
 
 
-def read_data(sk):
-    pass
+def send(sk, motor_data: dict):
+    motor.sendall("!I", len(json.dumps(data)))
+    time.sleep(0.01)
+    motor.sendall(json.dumps(data).encode())
+    print("sent!")
+
 
 
 if __name__ == "__main__":

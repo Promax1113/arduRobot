@@ -63,7 +63,7 @@ class MovementSocket(socket.socket):
 
 def socket_setup(port: int = 7777):
     sk = socket.socket()
-    sk.bind(("0.0.0.0", port))
+    sk.bind(("127.0.0.1", port))
     sock = None
     sk.listen()
 
@@ -148,14 +148,16 @@ def debug_serial_read():
 
 if __name__ == "__main__":
     camera_server = threading.Thread(target=camera.setup_camera)
-    camera_server.start()
+    #camera_server.start()
     
     ser = setup()
     sensor_data = socket_setup(port=7777)
+    # time.sleep(0.5)
+    # interrupt_socket = socket_setup(port=7778)
+    # motor_socket = MovementSocket(port=7779)
     time.sleep(0.5)
-    interrupt_socket = socket_setup(port=7778)
+    # interrupt_socket = socket_setup(port=7778)
     motor_socket = MovementSocket(port=7779)
-
     start_time = time.time()
     while True:
         data = serial_read(ser)
