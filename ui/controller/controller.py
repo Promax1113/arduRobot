@@ -15,7 +15,10 @@ def setup(addr: str, port: int):
             break
         except ConnectionRefusedError:
             tries += 1
-        
+    if tries >= 5:
+        print("Could not connect to the robot.")
+        exit(0)
+
     data = sk.recv(BUFSIZE)
     while not data:
         data = sk.recv(BUFSIZE)
@@ -28,15 +31,17 @@ def setup(addr: str, port: int):
     return sk
 
 
-def receive(sk, decode=True):
+def receive(sk: socket.socket, decode=True):
     header = None
     while not header:
         header = sk.recv(4)
     start_time = time.time()
     message_size = struct.unpack("!I", header)[0]
+    print(f"received header. message size: {message_size}")
+
     data = b""
     
-    while len(data) < message_size and time.time() - start_time< 1000:
+    while len(data) < message_size and time.time() - start_time< 0.3:
         received = sk.recv(min(message_size - len(data), 1024))
         while not received:
             received = sk.recv(min(message_size - len(data), 1024))
@@ -45,15 +50,15 @@ def receive(sk, decode=True):
     if decode:
         decoded: dict = json.loads(data.decode())
         
-    return decoded
+        return decoded
+    return data
 
-
-def send(sk, motor_data: dict):
-    motor.sendall("!I", len(json.dumps(data)))
-    time.sleep(0.01)
-    motor.sendall(json.dumps(data).encode())
+def send(sk: socket.socket, motor_data: dict):
+    sk.sendall(struct.pack("!I", len(json.dumps(motor_data).encode())))
+    print(f"sent header for message of {len(json.dumps(motor_data).encode())} bytes")
+    time.sleep(0.1)
+    sk.sendall(json.dumps(motor_data).encode())
     print("sent!")
-
 
 
 if __name__ == "__main__":

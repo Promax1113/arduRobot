@@ -1,9 +1,13 @@
 import sys
+import os
+import time
+import pygame
 import cv2 as cv
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QLabel, QGridLayout, QMessageBox, QTableWidget, QTableWidgetItem, QWidget, QApplication, QMainWindow, QSizePolicy, QPushButton
 from controller import setup, receive, send, SettingsWindow
+import json
 
 class Thread(QThread):
     def __init__(self) -> None:
@@ -44,32 +48,35 @@ class CameraThread(Thread):
         super().stop()
         self.capture.release()
 
-class SocketThread(Thread):
-    data_ready_signal = pyqtSignal(dict)
-    def __init__(self, address: str, port: int):
-        super().__init__()
-        self.connection = (address, port)
-        self.socket = setup(address, port)
-
-    def run(self):
-        while self._run_flag:
-            data = receive(self.socket)
-            print("emitting")
-            self.data_ready_signal.emit(data)
-    def stop(self):
-        self.socket.close()
 class GamepadInputThread(Thread):
     input_ready_signal = pyqtSignal(dict)
 
     def __init__(self) -> None:
         super().__init__()
-        self.input = {"rotation": 0, ""}
+        self.round_digits = 1
+        self.input: dict[str, float] = {"rotation": 0, "movement": 0, "camera_pitch": 0, "camera_yaw": 0}
+        self.clock = pygame.time.Clock()
+        pygame.init()
+        pygame.joystick.init()
+        time.sleep(0.1)
+        self.joystick = pygame.joystick.Joystick(0)
+
+    def run(self):
+        while self._run_flag:
+           pygame.event.pump()
+           self.input["rotation"] = round(self.joystick.get_axis(0), self.round_digits)
+           self.input["movement"] = round(self.joystick.get_axis(1), self.round_digits)
+           self.input["camera_pitch"] = round(self.joystick.get_axis(3), self.round_digits)
+           self.input["camera_yaw"] = round(self.joystick.get_axis(4), self.round_digits)
+           self.clock.tick(60)
+           self.input_ready_signal.emit(self.input)
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
 
+
         super().__init__()
         self.settingsWindow = None
-
         self.setWindowTitle("Robot Interface")
         self.resize(800, 400)
         self.configure_layout()
@@ -77,15 +84,31 @@ class MainWindow(QMainWindow):
         self.camera_thread.frame_ready_signal.connect(self.update_image)
         #self.camera_thread.start()
 
-        self.sensor_data_thread = SocketThread("127.0.0.1", 7777)
-        self.sensor_data_thread.data_ready_signal.connect(self.update_sensor_data)
-        self.sensor_data_thread.start()
+        self.data_socket = setup("127.0.0.1", 7777)
+        time.sleep(0.3)
+        self.interrupt_socket = setup("127.0.0.1", 7778)
+        time.sleep(0.3)
+        self.motor_socket = setup("127.0.0.1", 7779)
+        
+        print("socket made")
+        self.input_data_thread = GamepadInputThread()
+        self.input_data_thread.input_ready_signal.connect(self.update_inputs)
+        self.input_data_thread.start()
+        
+        self.input = {}
+    
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_and_send)
+        self.timer.start(200)
+        print("set timer")
 
-        self.input_method = "gamepad"
+    def update_inputs(self, inputs):
+        self.input = inputs
 
-        self.inputs: dict = {}
-
-        timer = QTimer()
+    def update_and_send(self):
+        data: dict = receive(self.data_socket, decode=True)
+        send(self.motor_socket, self.input)
+        self.update_sensor_data(data)
 
     def update_image(self, image):
         pixmap = QPixmap.fromImage(image)
@@ -108,11 +131,9 @@ class MainWindow(QMainWindow):
         print(result)
         if result == QMessageBox:
             exit(-1)
+    
 
     def update_sensor_data(self, data: dict):
-        print(data)
-        if "invalid" in data.keys():
-            return self.dialog_box("Socket Refused Connection", "The sensor data socket on the robot refused connection. Check that you are in the same network as the robot and that you have the respective ports open.", "icon")
         self.data_table.setColumnCount(2)
         self.data_table.setRowCount(len(data.keys()))
         i = 0
@@ -155,6 +176,10 @@ class MainWindow(QMainWindow):
 
 def main():
     # 1. Create the QApplication object
+    
+    os.environ['SDL_JOYSTICK_DEVICE'] = '/dev/input/js0'
+
+
     app = QApplication(sys.argv)
 
     window = MainWindow()

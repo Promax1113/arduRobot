@@ -28,7 +28,7 @@ class MovementSocket(socket.socket):
     def __init__(self, port) -> None:
         super().__init__(socket.AF_INET, socket.SOCK_STREAM)
         
-        self.bind(("0.0.0.0", port))
+        self.bind(("127.0.0.1", port))
         self.sender = None
         self.listen()
 
@@ -48,8 +48,13 @@ class MovementSocket(socket.socket):
 
     def receive(self):
         header = None
-        while not header:
+        start = time.time()
+        while not header and (time.time() - start) < 0.2:
+            print("time spent", time.time() - start)
             header = self.sender.recv(4)
+        
+        if not header:
+            return None
 
         data_size = struct.unpack("!I", header)[0]
         data = b"" 
@@ -59,6 +64,7 @@ class MovementSocket(socket.socket):
             while not received:
                 received = self.sender.recv(min(data_size - len(data), 1024))
             data += received
+        print(data.decode())
         return json.loads(data.decode())
 
 def socket_setup(port: int = 7777):
@@ -139,7 +145,9 @@ def send_data(sk, data, encode=True):
         data = data.encode()
     header = struct.pack("!I", len(data))
     sk.sendall(header)
+    print("sent header")
     sk.sendall(data)
+    print("sent")
 
 
 def debug_serial_read():
@@ -152,13 +160,10 @@ if __name__ == "__main__":
     
     ser = setup()
     sensor_data = socket_setup(port=7777)
-    # time.sleep(0.5)
-    # interrupt_socket = socket_setup(port=7778)
-    # motor_socket = MovementSocket(port=7779)
-    time.sleep(0.5)
-    # interrupt_socket = socket_setup(port=7778)
+    interrupt_socket = socket_setup(port=7778)
     motor_socket = MovementSocket(port=7779)
     start_time = time.time()
+    # time.sleep(5)
     while True:
         data = serial_read(ser)
         #data = debug_serial_read()
@@ -168,8 +173,12 @@ if __name__ == "__main__":
         except ConnectionResetError:
             print("connection was reset")
             sensor_data = socket_setup()
-        print(motor_socket.receive())
-        data = {"motor1": 1, "motor2": 0}
-        #serial_write(ser, data)
+            interrupt_socket = socket_setup(port=7778)
+            motor_socket = MovementSocket(port=7779)
+        
+
+        motor_data = motor_socket.receive()
+        print(motor_data)
+        serial_write(ser, motor_data)
 
         time.sleep(0.2)
